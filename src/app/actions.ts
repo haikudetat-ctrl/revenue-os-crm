@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAuthenticatedUser } from "@/lib/auth";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { PIPELINE_STAGES } from "@/lib/types";
 
@@ -40,7 +41,9 @@ function parseStage(value: FormDataEntryValue | null) {
   return "Cold Signal";
 }
 
-function getRequiredSupabaseClient() {
+async function getRequiredSupabaseClient() {
+  await requireAuthenticatedUser();
+
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
@@ -67,7 +70,7 @@ function isRedirectSignal(error: unknown) {
 
 export async function createAccountAction(formData: FormData) {
   try {
-    const supabase = getRequiredSupabaseClient();
+    const supabase = await getRequiredSupabaseClient();
 
     const companyName = String(formData.get("companyName") ?? "").trim();
     const industryVertical = String(formData.get("industryVertical") ?? "").trim();
@@ -121,7 +124,7 @@ export async function createAccountAction(formData: FormData) {
 
 export async function createContactAction(formData: FormData) {
   try {
-    const supabase = getRequiredSupabaseClient();
+    const supabase = await getRequiredSupabaseClient();
 
     const accountId = String(formData.get("accountId") ?? "").trim();
     const name = String(formData.get("name") ?? "").trim();
@@ -165,7 +168,7 @@ export async function createContactAction(formData: FormData) {
 
 export async function createDealAction(formData: FormData) {
   try {
-    const supabase = getRequiredSupabaseClient();
+    const supabase = await getRequiredSupabaseClient();
 
     const accountId = String(formData.get("accountId") ?? "").trim();
     const primaryContactId = String(formData.get("primaryContactId") ?? "").trim();
@@ -225,7 +228,7 @@ export async function createDealAction(formData: FormData) {
 
 export async function updateDealStageAction(formData: FormData) {
   try {
-    const supabase = getRequiredSupabaseClient();
+    const supabase = await getRequiredSupabaseClient();
 
     const dealId = String(formData.get("dealId") ?? "").trim();
     const stage = parseStage(formData.get("stage"));
@@ -265,7 +268,7 @@ export async function updateDealStageAction(formData: FormData) {
 
 export async function createCampaignSignalAction(formData: FormData) {
   try {
-    const supabase = getRequiredSupabaseClient();
+    const supabase = await getRequiredSupabaseClient();
 
     const accountId = String(formData.get("accountId") ?? "").trim();
     const contactId = String(formData.get("contactId") ?? "").trim();
@@ -307,7 +310,7 @@ export async function createCampaignSignalAction(formData: FormData) {
 
 export async function createDiagnosticAction(formData: FormData) {
   try {
-    const supabase = getRequiredSupabaseClient();
+    const supabase = await getRequiredSupabaseClient();
 
     const accountId = String(formData.get("accountId") ?? "").trim();
     const desiredOutcome = String(formData.get("desiredOutcome") ?? "").trim();
@@ -352,7 +355,7 @@ export async function createDiagnosticAction(formData: FormData) {
 
 export async function createAutomationRuleAction(formData: FormData) {
   try {
-    const supabase = getRequiredSupabaseClient();
+    const supabase = await getRequiredSupabaseClient();
 
     const triggerName = String(formData.get("triggerName") ?? "").trim();
     const actionName = String(formData.get("actionName") ?? "").trim();

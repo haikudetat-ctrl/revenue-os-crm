@@ -1,4 +1,6 @@
+import { logoutAction } from "@/app/auth-actions";
 import { CrmOperations } from "@/components/crm-operations";
+import type { AuthenticatedUser } from "@/lib/auth";
 import { CrmSnapshot, FlashMessage, PIPELINE_STAGES } from "@/lib/types";
 
 function formatCurrency(value: number) {
@@ -39,9 +41,13 @@ function getStageTone(index: number) {
 export function CrmDashboard({
   snapshot,
   flashMessage,
+  viewer,
+  authEnabled,
 }: {
   snapshot: CrmSnapshot;
   flashMessage?: FlashMessage | null;
+  viewer?: AuthenticatedUser | null;
+  authEnabled: boolean;
 }) {
   const topAccounts = [...snapshot.accounts]
     .sort((a, b) => b.estimatedMonthlyRevenueLeak - a.estimatedMonthlyRevenueLeak)
@@ -73,6 +79,28 @@ export function CrmDashboard({
                 friction, belief stage, and probability-weighted revenue. Anything else is
                 noise.
               </p>
+
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                {authEnabled ? (
+                  <>
+                    <div className="rounded-full bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
+                      Signed in as {viewer?.name ?? viewer?.email ?? "Unknown user"}
+                    </div>
+                    <form action={logoutAction}>
+                      <button
+                        className="rounded-full border border-slate-300 bg-white/70 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-white"
+                        type="submit"
+                      >
+                        Log Out
+                      </button>
+                    </form>
+                  </>
+                ) : (
+                  <div className="rounded-full bg-amber-100 px-3 py-1.5 text-sm font-medium text-amber-950">
+                    Auth is not configured yet. Add CRM_USER_* and CRM_SESSION_SECRET to turn on login.
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
