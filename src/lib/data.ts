@@ -5,6 +5,7 @@ import {
   AutomationRule,
   CampaignSignal,
   Contact,
+  CrmSnapshot,
   Deal,
   DiagnosticData,
   VerticalModule,
@@ -18,15 +19,27 @@ function camelizeRecord<T extends Record<string, unknown>>(record: T) {
   }, {}) as T;
 }
 
-export async function getCrmSnapshot() {
+function fallbackSnapshot(syncMessage: string): CrmSnapshot {
+  return {
+    ...mockCrmSnapshot,
+    syncStatus: "fallback",
+    syncMessage,
+  };
+}
+
+export async function getCrmSnapshot(): Promise<CrmSnapshot> {
   if (!isSupabaseConfigured()) {
-    return mockCrmSnapshot;
+    return fallbackSnapshot(
+      "Supabase environment variables are missing. Add NEXT_PUBLIC_SUPABASE_URL and a valid key in Vercel.",
+    );
   }
 
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
-    return mockCrmSnapshot;
+    return fallbackSnapshot(
+      "Supabase client could not be initialized. Verify the URL and API key values.",
+    );
   }
 
   try {
@@ -58,8 +71,10 @@ export async function getCrmSnapshot() {
       verticalModulesResult,
     ];
 
-    if (results.some((result) => result.error)) {
-      return mockCrmSnapshot;
+    const firstError = results.find((result) => result.error)?.error;
+
+    if (firstError) {
+      return fallbackSnapshot(`Supabase query failed: ${firstError.message}`);
     }
 
     const accounts = (accountsResult.data ?? []).map((row) => {
@@ -112,7 +127,10 @@ export async function getCrmSnapshot() {
         ? verticalModules
         : mockCrmSnapshot.verticalModules,
     });
-  } catch {
-    return mockCrmSnapshot;
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown error while loading Supabase data.";
+
+    return fallbackSnapshot(`Supabase request threw: ${message}`);
   }
 }

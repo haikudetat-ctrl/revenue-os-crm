@@ -250,6 +250,11 @@ export function buildCrmSnapshot(input: {
 
   return {
     ...input,
+    syncStatus: input.origin === "supabase" ? "connected" : "fallback",
+    syncMessage:
+      input.origin === "supabase"
+        ? "Live Supabase reads succeeded."
+        : "Using bundled seeded data because no live Supabase connection is active.",
     deals,
     dashboardMetrics,
     stagePerformance,

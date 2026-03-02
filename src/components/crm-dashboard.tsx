@@ -86,6 +86,19 @@ export function CrmDashboard({ snapshot }: { snapshot: CrmSnapshot }) {
               />
             </div>
           </div>
+
+          <div
+            className={`mt-6 rounded-3xl px-4 py-4 text-sm leading-6 ${
+              snapshot.syncStatus === "connected"
+                ? "bg-emerald-100 text-emerald-950"
+                : "bg-amber-100 text-amber-950"
+            }`}
+          >
+            <span className="font-mono text-[11px] uppercase tracking-[0.2em]">
+              {snapshot.syncStatus === "connected" ? "Sync Healthy" : "Fallback Reason"}
+            </span>
+            <p className="mt-2">{snapshot.syncMessage}</p>
+          </div>
         </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

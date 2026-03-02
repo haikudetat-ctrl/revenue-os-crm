@@ -154,6 +154,8 @@ export interface CampaignPerformance {
 
 export interface CrmSnapshot {
   origin: "mock" | "supabase";
+  syncStatus: "connected" | "fallback";
+  syncMessage: string;
   accounts: Account[];
   contacts: Contact[];
   campaignSignals: CampaignSignal[];
