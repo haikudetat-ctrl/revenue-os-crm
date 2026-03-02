@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Revenue OS CRM
 
-## Getting Started
+A signal-first CRM built for Vercel + Supabase. It is designed around five operating questions:
 
-First, run the development server:
+- Where did the signal originate?
+- What math do we know about this prospect?
+- What friction are they experiencing?
+- What stage of belief are they in?
+- What is the probability-weighted revenue?
+
+This starter includes:
+
+- A Next.js 16 App Router frontend ready for Vercel.
+- A Supabase schema covering accounts, contacts, signals, diagnostics, deals, automations, and vertical modules.
+- A server-side data layer that reads from Supabase when environment variables are present.
+- A seeded fallback dataset so the UI still renders before the database is connected.
+
+## Local Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy `.env.example` to `.env.local` and set:
 
-## Learn More
+```bash
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+```
 
-To learn more about Next.js, take a look at the following resources:
+`SUPABASE_SERVICE_ROLE_KEY` is recommended because the dashboard loads server-side and can safely use privileged reads on Vercel. If the variables are missing, the app falls back to bundled mock data.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Supabase Setup
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Create a new Supabase project, then run the included migration:
 
-## Deploy on Vercel
+```bash
+supabase link --project-ref <your-project-ref>
+supabase db push
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The migration lives at [supabase/migrations/20260302113000_revenue_os.sql](/Users/surfturf/TR-CRM1.0/supabase/migrations/20260302113000_revenue_os.sql).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deploy to Vercel
+
+1. Push this repository to GitHub.
+2. Import it into Vercel as a Next.js project.
+3. Add the Supabase environment variables in the Vercel project settings.
+4. Redeploy after the Supabase schema is applied.
+
+## Project Structure
+
+- [src/app/page.tsx](/Users/surfturf/TR-CRM1.0/src/app/page.tsx): server-rendered entrypoint.
+- [src/components/crm-dashboard.tsx](/Users/surfturf/TR-CRM1.0/src/components/crm-dashboard.tsx): primary CRM UI.
+- [src/lib/data.ts](/Users/surfturf/TR-CRM1.0/src/lib/data.ts): Supabase fetch + fallback logic.
+- [src/lib/mock-data.ts](/Users/surfturf/TR-CRM1.0/src/lib/mock-data.ts): seeded dataset and dashboard calculations.
+- [src/lib/types.ts](/Users/surfturf/TR-CRM1.0/src/lib/types.ts): domain types.
+
+## Current Scope
+
+This is a production-oriented MVP, not a finished multi-tenant SaaS. It gives you:
+
+- The math layer for accounts.
+- Belief-progression pipeline stages.
+- AI SDR classification and weighted revenue math.
+- Revenue intelligence views and campaign performance.
+- Automation rules and vertical intelligence modules.
+
+The next practical extension is adding authenticated write flows (forms/actions) on top of the existing schema.
