@@ -15,10 +15,10 @@ export function CrmNav() {
         return (
           <Link
             key={item.href}
-            className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`rounded-2xl border px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.12em] transition-colors ${
               isActive
-                ? "border-slate-900 bg-slate-900 text-white"
-                : "border-slate-200 bg-white/70 text-slate-700 hover:border-slate-300 hover:bg-white"
+                ? "border-[rgba(33,42,52,0.18)] bg-[linear-gradient(135deg,rgba(77,91,134,0.9),rgba(30,102,104,0.92))] text-[#f5efe4] shadow-[0_8px_24px_rgba(33,42,52,0.16)]"
+                : "border-[rgba(33,42,52,0.1)] bg-[rgba(255,255,255,0.42)] text-[var(--foreground)] hover:border-[rgba(33,42,52,0.16)] hover:bg-[rgba(255,255,255,0.62)]"
             }`}
             href={item.href}
           >

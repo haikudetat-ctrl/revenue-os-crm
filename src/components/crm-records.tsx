@@ -1236,7 +1236,7 @@ function Field(props: {
 function SubmitButton(props: { label: string; disabled?: boolean }) {
   return (
     <button
-      className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+      className="inline-flex items-center justify-center rounded-2xl border border-[rgba(33,42,52,0.12)] bg-[linear-gradient(135deg,var(--indigo),var(--teal))] px-4 py-2.5 text-sm font-semibold text-[#f5efe4] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-[rgba(33,42,52,0.18)] disabled:text-[rgba(245,239,228,0.72)]"
       disabled={props.disabled}
       type="submit"
     >
@@ -1246,13 +1246,13 @@ function SubmitButton(props: { label: string; disabled?: boolean }) {
 }
 
 const inputClassName =
-  "w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-teal-600";
+  "w-full rounded-2xl border border-[rgba(33,42,52,0.12)] bg-[rgba(255,255,255,0.58)] px-3 py-2 text-sm text-[var(--foreground)] outline-none transition-colors focus:border-[var(--teal)]";
 
 const textareaClassName =
-  "w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-teal-600";
+  "w-full rounded-2xl border border-[rgba(33,42,52,0.12)] bg-[rgba(255,255,255,0.58)] px-3 py-2 text-sm text-[var(--foreground)] outline-none transition-colors focus:border-[var(--teal)]";
 
 const primaryButtonClassName =
-  "inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-700";
+  "inline-flex items-center justify-center rounded-2xl border border-[rgba(33,42,52,0.12)] bg-[linear-gradient(135deg,var(--indigo),var(--teal))] px-4 py-2 text-sm font-semibold text-[#f5efe4] transition-opacity hover:opacity-90";
 
 const secondaryButtonClassName =
-  "inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white/70 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-white";
+  "inline-flex items-center justify-center rounded-2xl border border-[rgba(33,42,52,0.12)] bg-[rgba(255,255,255,0.48)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition-colors hover:border-[rgba(33,42,52,0.18)] hover:bg-[rgba(255,255,255,0.66)]";

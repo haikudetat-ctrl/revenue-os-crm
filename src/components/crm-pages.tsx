@@ -653,4 +653,4 @@ function MetricMini(props: { label: string; value: string; helper: string }) {
 }
 
 const inputClassName =
-  "w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-teal-600";
+  "w-full rounded-2xl border border-[rgba(33,42,52,0.12)] bg-[rgba(255,255,255,0.58)] px-3 py-2 text-sm text-[var(--foreground)] outline-none transition-colors focus:border-[var(--teal)]";
