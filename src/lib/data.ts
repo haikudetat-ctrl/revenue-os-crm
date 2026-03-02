@@ -113,19 +113,13 @@ export async function getCrmSnapshot(): Promise<CrmSnapshot> {
 
     return buildCrmSnapshot({
       origin: "supabase",
-      accounts: accounts.length ? accounts : mockCrmSnapshot.accounts,
-      contacts: contacts.length ? contacts : mockCrmSnapshot.contacts,
-      campaignSignals: campaignSignals.length
-        ? campaignSignals
-        : mockCrmSnapshot.campaignSignals,
-      diagnostics: diagnostics.length ? diagnostics : mockCrmSnapshot.diagnostics,
-      deals: deals.length ? deals : mockCrmSnapshot.deals,
-      automationRules: automationRules.length
-        ? automationRules
-        : mockCrmSnapshot.automationRules,
-      verticalModules: verticalModules.length
-        ? verticalModules
-        : mockCrmSnapshot.verticalModules,
+      accounts,
+      contacts,
+      campaignSignals,
+      diagnostics,
+      deals,
+      automationRules,
+      verticalModules,
     });
   } catch (error) {
     const message =

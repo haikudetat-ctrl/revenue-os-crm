@@ -169,3 +169,8 @@ export interface CrmSnapshot {
   weightedRevenue: number;
   generatedAt: string;
 }
+
+export interface FlashMessage {
+  status: "success" | "error";
+  message: string;
+}

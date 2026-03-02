@@ -1,4 +1,5 @@
-import { CrmSnapshot, PIPELINE_STAGES } from "@/lib/types";
+import { CrmOperations } from "@/components/crm-operations";
+import { CrmSnapshot, FlashMessage, PIPELINE_STAGES } from "@/lib/types";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -35,7 +36,13 @@ function getStageTone(index: number) {
   return tones[index] ?? tones[0];
 }
 
-export function CrmDashboard({ snapshot }: { snapshot: CrmSnapshot }) {
+export function CrmDashboard({
+  snapshot,
+  flashMessage,
+}: {
+  snapshot: CrmSnapshot;
+  flashMessage?: FlashMessage | null;
+}) {
   const topAccounts = [...snapshot.accounts]
     .sort((a, b) => b.estimatedMonthlyRevenueLeak - a.estimatedMonthlyRevenueLeak)
     .slice(0, 3);
@@ -99,7 +106,24 @@ export function CrmDashboard({ snapshot }: { snapshot: CrmSnapshot }) {
             </span>
             <p className="mt-2">{snapshot.syncMessage}</p>
           </div>
+
+          {flashMessage ? (
+            <div
+              className={`mt-4 rounded-3xl px-4 py-4 text-sm leading-6 ${
+                flashMessage.status === "success"
+                  ? "bg-cyan-100 text-cyan-950"
+                  : "bg-rose-100 text-rose-950"
+              }`}
+            >
+              <span className="font-mono text-[11px] uppercase tracking-[0.2em]">
+                {flashMessage.status === "success" ? "Action Complete" : "Action Error"}
+              </span>
+              <p className="mt-2">{flashMessage.message}</p>
+            </div>
+          ) : null}
         </section>
+
+        <CrmOperations snapshot={snapshot} />
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {snapshot.dashboardMetrics.map((metric) => (
@@ -187,8 +211,11 @@ export function CrmDashboard({ snapshot }: { snapshot: CrmSnapshot }) {
                 AI SDR Layer
               </p>
               <h2 className="mt-2 text-2xl font-semibold">Reply classification engine</h2>
-              <div className="mt-5 space-y-3">
-                {topSignals.map((signal) => (
+            <div className="mt-5 space-y-3">
+              {topSignals.length === 0 ? (
+                <EmptySection message="No campaign signals logged yet." />
+              ) : (
+                topSignals.map((signal) => (
                   <div
                     key={signal.id}
                     className="rounded-2xl border border-white/70 bg-white/70 p-4"
@@ -207,9 +234,10 @@ export function CrmDashboard({ snapshot }: { snapshot: CrmSnapshot }) {
                       • {signal.replySentiment} sentiment
                     </p>
                   </div>
-                ))}
-              </div>
-            </section>
+                ))
+              )}
+            </div>
+          </section>
 
             <section className="rounded-[2rem] bg-slate-950 p-6 text-white shadow-2xl">
               <p className="font-mono text-xs uppercase tracking-[0.24em] text-slate-400">
@@ -223,22 +251,26 @@ export function CrmDashboard({ snapshot }: { snapshot: CrmSnapshot }) {
                 forecasts weighted revenue instead of pipeline fantasy.
               </p>
               <div className="mt-5 grid gap-3">
-                {strongestDeals.slice(0, 3).map((deal) => (
-                  <div
-                    key={deal.id}
-                    className="rounded-2xl border border-white/10 bg-white/5 p-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="font-semibold">{deal.name}</p>
-                      <p className="font-mono text-sm text-teal-300">
-                        {deal.probabilityScore}% / {formatCurrency(deal.weightedRevenue ?? 0)}
+                {strongestDeals.length === 0 ? (
+                  <EmptySection message="No deals yet. Create the first deal in the operating console." dark />
+                ) : (
+                  strongestDeals.slice(0, 3).map((deal) => (
+                    <div
+                      key={deal.id}
+                      className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-semibold">{deal.name}</p>
+                        <p className="font-mono text-sm text-teal-300">
+                          {deal.probabilityScore}% / {formatCurrency(deal.weightedRevenue ?? 0)}
+                        </p>
+                      </div>
+                      <p className="mt-2 text-sm text-slate-300">
+                        {deal.ownerName} • {deal.nextAction}
                       </p>
                     </div>
-                    <p className="mt-2 text-sm text-slate-300">
-                      {deal.ownerName} • {deal.nextAction}
-                    </p>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </section>
           </div>
@@ -260,73 +292,77 @@ export function CrmDashboard({ snapshot }: { snapshot: CrmSnapshot }) {
             </div>
 
             <div className="mt-6 space-y-4">
-              {topAccounts.map((account) => (
-                <article
-                  key={account.id}
-                  className="rounded-3xl border border-white/70 bg-white/75 p-5"
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="text-xl font-semibold">{account.companyName}</p>
-                      <p className="mt-1 text-sm text-slate-600">
-                        {account.industryVertical} • {account.location} •{" "}
-                        {account.acquisitionModel} acquisition
-                      </p>
+              {topAccounts.length === 0 ? (
+                <EmptySection message="No accounts yet. Create the first account in the operating console." />
+              ) : (
+                topAccounts.map((account) => (
+                  <article
+                    key={account.id}
+                    className="rounded-3xl border border-white/70 bg-white/75 p-5"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-xl font-semibold">{account.companyName}</p>
+                        <p className="mt-1 text-sm text-slate-600">
+                          {account.industryVertical} • {account.location} •{" "}
+                          {account.acquisitionModel} acquisition
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-slate-900 px-4 py-3 text-right text-white">
+                        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-300">
+                          Leak / Month
+                        </p>
+                        <p className="text-xl font-semibold">
+                          {formatCurrency(account.estimatedMonthlyRevenueLeak)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="rounded-2xl bg-slate-900 px-4 py-3 text-right text-white">
-                      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-300">
-                        Leak / Month
-                      </p>
-                      <p className="text-xl font-semibold">
-                        {formatCurrency(account.estimatedMonthlyRevenueLeak)}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <MetricMini
-                      label="Signal"
-                      value={`${account.signalScore}/100`}
-                      helper="Outbound intensity"
-                    />
-                    <MetricMini
-                      label="ICP Fit"
-                      value={`${account.icpFitScore}/100`}
-                      helper="Ideal customer score"
-                    />
-                    <MetricMini
-                      label="LTV"
-                      value={formatCurrency(account.estimatedLtv)}
-                      helper="Estimated customer value"
-                    />
-                    <MetricMini
-                      label="Conv."
-                      value={formatPercent(account.estimatedConversionRate)}
-                      helper="Estimated conversion rate"
-                    />
-                  </div>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      <MetricMini
+                        label="Signal"
+                        value={`${account.signalScore}/100`}
+                        helper="Outbound intensity"
+                      />
+                      <MetricMini
+                        label="ICP Fit"
+                        value={`${account.icpFitScore}/100`}
+                        helper="Ideal customer score"
+                      />
+                      <MetricMini
+                        label="LTV"
+                        value={formatCurrency(account.estimatedLtv)}
+                        helper="Estimated customer value"
+                      />
+                      <MetricMini
+                        label="Conv."
+                        value={formatPercent(account.estimatedConversionRate)}
+                        helper="Estimated conversion rate"
+                      />
+                    </div>
 
-                  <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-                    <div className="rounded-2xl bg-slate-50 p-4">
-                      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                        Friction
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-slate-700">
-                        {account.frictionSummary}
-                      </p>
+                    <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+                      <div className="rounded-2xl bg-slate-50 p-4">
+                        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                          Friction
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-slate-700">
+                          {account.frictionSummary}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-slate-50 p-4">
+                        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                          System Context
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-slate-700">
+                          {account.techStack.join(", ")} with {account.bookingSoftware} and{" "}
+                          {account.crmUsed}.
+                        </p>
+                      </div>
                     </div>
-                    <div className="rounded-2xl bg-slate-50 p-4">
-                      <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                        System Context
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-slate-700">
-                        {account.techStack.join(", ")} with {account.bookingSoftware} and{" "}
-                        {account.crmUsed}.
-                      </p>
-                    </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                ))
+              )}
             </div>
           </div>
 
@@ -365,42 +401,54 @@ export function CrmDashboard({ snapshot }: { snapshot: CrmSnapshot }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {snapshot.campaignPerformance.map((campaign) => (
-                    <tr key={campaign.campaignName} className="border-t border-slate-200/70">
-                      <td className="px-4 py-3 font-semibold">{campaign.campaignName}</td>
-                      <td className="px-4 py-3">{formatPercent(campaign.replyRate)}</td>
-                      <td className="px-4 py-3">{formatPercent(campaign.bookedRate)}</td>
-                      <td className="px-4 py-3">{formatCurrency(campaign.mrrAdded)}</td>
-                      <td className="px-4 py-3 font-semibold text-teal-800">
-                        {formatCurrency(campaign.revenuePerThousandEmails)}
+                  {snapshot.campaignPerformance.length === 0 ? (
+                    <tr>
+                      <td className="px-4 py-4 text-sm text-slate-500" colSpan={5}>
+                        No campaign performance yet. Log a signal to start tracking.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    snapshot.campaignPerformance.map((campaign) => (
+                      <tr key={campaign.campaignName} className="border-t border-slate-200/70">
+                        <td className="px-4 py-3 font-semibold">{campaign.campaignName}</td>
+                        <td className="px-4 py-3">{formatPercent(campaign.replyRate)}</td>
+                        <td className="px-4 py-3">{formatPercent(campaign.bookedRate)}</td>
+                        <td className="px-4 py-3">{formatCurrency(campaign.mrrAdded)}</td>
+                        <td className="px-4 py-3 font-semibold text-teal-800">
+                          {formatCurrency(campaign.revenuePerThousandEmails)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
 
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
-              {snapshot.diagnostics.map((diagnostic) => (
-                <article
-                  key={diagnostic.id}
-                  className="rounded-3xl border border-white/70 bg-white/75 p-5"
-                >
-                  <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                    Diagnostic signal
-                  </p>
-                  <p className="mt-2 text-xl font-semibold">
-                    {formatCurrency(diagnostic.calculatedLeak)} leak identified
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Pain score {diagnostic.selfReportedPainLevel}/10 • {diagnostic.timeOnPageSeconds}
-                    s on page • {diagnostic.scrollDepthPercent}% scroll depth
-                  </p>
-                  <p className="mt-3 text-sm font-medium text-slate-800">
-                    {diagnostic.desiredOutcome}
-                  </p>
-                </article>
-              ))}
+              {snapshot.diagnostics.length === 0 ? (
+                <EmptySection message="No diagnostics captured yet." />
+              ) : (
+                snapshot.diagnostics.map((diagnostic) => (
+                  <article
+                    key={diagnostic.id}
+                    className="rounded-3xl border border-white/70 bg-white/75 p-5"
+                  >
+                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                      Diagnostic signal
+                    </p>
+                    <p className="mt-2 text-xl font-semibold">
+                      {formatCurrency(diagnostic.calculatedLeak)} leak identified
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      Pain score {diagnostic.selfReportedPainLevel}/10 • {diagnostic.timeOnPageSeconds}
+                      s on page • {diagnostic.scrollDepthPercent}% scroll depth
+                    </p>
+                    <p className="mt-3 text-sm font-medium text-slate-800">
+                      {diagnostic.desiredOutcome}
+                    </p>
+                  </article>
+                ))
+              )}
             </div>
           </div>
         </section>
@@ -412,20 +460,24 @@ export function CrmDashboard({ snapshot }: { snapshot: CrmSnapshot }) {
             </p>
             <h2 className="mt-2 text-2xl font-semibold">Reduce thinking load</h2>
             <div className="mt-5 space-y-3">
-              {snapshot.automationRules.map((rule) => (
-                <div
-                  key={rule.id}
-                  className="rounded-2xl border border-white/70 bg-white/75 p-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold text-slate-900">{rule.trigger}</p>
-                    <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-emerald-900">
-                      {rule.status}
-                    </span>
+              {snapshot.automationRules.length === 0 ? (
+                <EmptySection message="No automation rules yet. Add one in the automation builder." />
+              ) : (
+                snapshot.automationRules.map((rule) => (
+                  <div
+                    key={rule.id}
+                    className="rounded-2xl border border-white/70 bg-white/75 p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-semibold text-slate-900">{rule.trigger}</p>
+                      <span className="rounded-full bg-emerald-100 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-emerald-900">
+                        {rule.status}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{rule.action}</p>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{rule.action}</p>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -435,25 +487,29 @@ export function CrmDashboard({ snapshot }: { snapshot: CrmSnapshot }) {
             </p>
             <h2 className="mt-2 text-2xl font-semibold">Adaptive offer modules</h2>
             <div className="mt-5 space-y-4">
-              {snapshot.verticalModules.map((module) => (
-                <article
-                  key={module.id}
-                  className="rounded-3xl border border-white/70 bg-white/75 p-4"
-                >
-                  <p className="text-lg font-semibold text-slate-900">{module.vertical}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{module.summary}</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {module.metrics.map((metric) => (
-                      <span
-                        key={metric}
-                        className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white"
-                      >
-                        {metric}
-                      </span>
-                    ))}
-                  </div>
-                </article>
-              ))}
+              {snapshot.verticalModules.length === 0 ? (
+                <EmptySection message="No vertical modules added yet." />
+              ) : (
+                snapshot.verticalModules.map((module) => (
+                  <article
+                    key={module.id}
+                    className="rounded-3xl border border-white/70 bg-white/75 p-4"
+                  >
+                    <p className="text-lg font-semibold text-slate-900">{module.vertical}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{module.summary}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {module.metrics.map((metric) => (
+                        <span
+                          key={metric}
+                          className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white"
+                        >
+                          {metric}
+                        </span>
+                      ))}
+                    </div>
+                  </article>
+                ))
+              )}
             </div>
           </div>
 
@@ -500,6 +556,20 @@ function InsightCard(props: { eyebrow: string; value: string; helper: string }) 
       </p>
       <p className="mt-2 text-xl font-semibold text-slate-900">{props.value}</p>
       <p className="mt-2 text-sm leading-6 text-slate-600">{props.helper}</p>
+    </div>
+  );
+}
+
+function EmptySection(props: { message: string; dark?: boolean }) {
+  return (
+    <div
+      className={`rounded-2xl border border-dashed px-4 py-4 text-sm leading-6 ${
+        props.dark
+          ? "border-white/20 bg-white/5 text-slate-300"
+          : "border-slate-300 bg-slate-50 text-slate-600"
+      }`}
+    >
+      {props.message}
     </div>
   );
 }
