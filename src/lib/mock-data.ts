@@ -8,6 +8,7 @@ import {
   DashboardMetric,
   Deal,
   DiagnosticData,
+  LedgerEntry,
   PIPELINE_STAGES,
   StagePerformance,
   VerticalModule,
@@ -60,6 +61,7 @@ export function buildCrmSnapshot(input: {
   deals: Deal[];
   automationRules: AutomationRule[];
   verticalModules: VerticalModule[];
+  ledgerEntries?: LedgerEntry[];
 }): CrmSnapshot {
   const deals = enrichDeals(input.deals);
   const emailsSent = input.campaignSignals.length;
@@ -256,6 +258,7 @@ export function buildCrmSnapshot(input: {
         ? "Live Supabase reads succeeded."
         : "Using bundled seeded data because no live Supabase connection is active.",
     deals,
+    ledgerEntries: input.ledgerEntries ?? [],
     dashboardMetrics,
     stagePerformance,
     campaignPerformance,
@@ -738,6 +741,36 @@ const verticalModules: VerticalModule[] = [
   },
 ];
 
+const ledgerEntries: LedgerEntry[] = [
+  {
+    id: "led_1",
+    entryType: "Expense",
+    occurredOn: "2026-02-26",
+    ownerName: "Chris",
+    description: "Vercel and domain renewals",
+    notes: "Annual infrastructure billing",
+    amount: 184,
+  },
+  {
+    id: "led_2",
+    entryType: "Expense",
+    occurredOn: "2026-02-27",
+    ownerName: "Partner",
+    description: "Prospect list purchase",
+    notes: "Apollo export credits",
+    amount: 320,
+  },
+  {
+    id: "led_3",
+    entryType: "Revenue",
+    occurredOn: "2026-03-01",
+    ownerName: "Chris",
+    description: "Setup fee collected",
+    notes: "Initial implementation payment",
+    amount: 2500,
+  },
+];
+
 export const mockCrmSnapshot = buildCrmSnapshot({
   origin: "mock",
   accounts,
@@ -747,4 +780,5 @@ export const mockCrmSnapshot = buildCrmSnapshot({
   deals,
   automationRules,
   verticalModules,
+  ledgerEntries,
 });

@@ -3,13 +3,14 @@ import { getSupabaseServerClient, isSupabaseConfigured } from "@/lib/supabase";
 import {
   Account,
   AutomationRule,
-  CampaignSignal,
-  Contact,
-  CrmSnapshot,
-  Deal,
-  DiagnosticData,
-  VerticalModule,
-} from "@/lib/types";
+    CampaignSignal,
+    Contact,
+    CrmSnapshot,
+    Deal,
+    DiagnosticData,
+    LedgerEntry,
+    VerticalModule,
+  } from "@/lib/types";
 
 function camelizeRecord<T extends Record<string, unknown>>(record: T) {
   return Object.entries(record).reduce<Record<string, unknown>>((acc, [key, value]) => {
@@ -47,29 +48,32 @@ export async function getCrmSnapshot(): Promise<CrmSnapshot> {
       accountsResult,
       contactsResult,
       campaignSignalsResult,
-      diagnosticsResult,
-      dealsResult,
-      automationRulesResult,
-      verticalModulesResult,
-    ] = await Promise.all([
-      supabase.from("accounts").select("*").order("signal_score", { ascending: false }),
-      supabase.from("contacts").select("*"),
-      supabase.from("campaign_signals").select("*"),
-      supabase.from("diagnostics").select("*"),
-      supabase.from("deals").select("*"),
-      supabase.from("automation_rules").select("*"),
-      supabase.from("vertical_modules").select("*"),
-    ]);
+          diagnosticsResult,
+          dealsResult,
+          automationRulesResult,
+          verticalModulesResult,
+          ledgerEntriesResult,
+        ] = await Promise.all([
+          supabase.from("accounts").select("*").order("signal_score", { ascending: false }),
+          supabase.from("contacts").select("*"),
+          supabase.from("campaign_signals").select("*"),
+          supabase.from("diagnostics").select("*"),
+          supabase.from("deals").select("*"),
+          supabase.from("automation_rules").select("*"),
+          supabase.from("vertical_modules").select("*"),
+          supabase.from("ledger_entries").select("*").order("occurred_on", { ascending: false }),
+        ]);
 
     const results = [
       accountsResult,
       contactsResult,
       campaignSignalsResult,
-      diagnosticsResult,
-      dealsResult,
-      automationRulesResult,
-      verticalModulesResult,
-    ];
+          diagnosticsResult,
+          dealsResult,
+          automationRulesResult,
+          verticalModulesResult,
+          ledgerEntriesResult,
+        ];
 
     const firstError = results.find((result) => result.error)?.error;
 
@@ -107,20 +111,24 @@ export async function getCrmSnapshot(): Promise<CrmSnapshot> {
         status: item.status === "Draft" ? "Draft" : "Active",
       } as AutomationRule;
     });
-    const verticalModules = (verticalModulesResult.data ?? []).map(
-      (row) => camelizeRecord(row) as VerticalModule,
-    );
+        const verticalModules = (verticalModulesResult.data ?? []).map(
+          (row) => camelizeRecord(row) as VerticalModule,
+        );
+        const ledgerEntries = (ledgerEntriesResult.data ?? []).map(
+          (row) => camelizeRecord(row) as LedgerEntry,
+        );
 
-    return buildCrmSnapshot({
-      origin: "supabase",
+        return buildCrmSnapshot({
+          origin: "supabase",
       accounts,
       contacts,
       campaignSignals,
       diagnostics,
-      deals,
-      automationRules,
-      verticalModules,
-    });
+          deals,
+          automationRules,
+          verticalModules,
+          ledgerEntries,
+        });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown error while loading Supabase data.";

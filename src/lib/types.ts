@@ -25,6 +25,8 @@ export type ReplyClassification =
   | "Wrong Person"
   | "Hostile";
 
+export type LedgerEntryType = "Expense" | "Revenue";
+
 export interface Account {
   id: string;
   companyName: string;
@@ -128,6 +130,17 @@ export interface VerticalModule {
   metrics: string[];
 }
 
+export interface LedgerEntry {
+  id: string;
+  entryType: LedgerEntryType;
+  occurredOn: string;
+  ownerName: string;
+  description: string;
+  notes: string;
+  amount: number;
+  createdAt?: string;
+}
+
 export interface DashboardMetric {
   label: string;
   value: string;
@@ -163,6 +176,7 @@ export interface CrmSnapshot {
   deals: Deal[];
   automationRules: AutomationRule[];
   verticalModules: VerticalModule[];
+  ledgerEntries: LedgerEntry[];
   dashboardMetrics: DashboardMetric[];
   stagePerformance: StagePerformance[];
   campaignPerformance: CampaignPerformance[];
