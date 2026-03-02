@@ -1,6 +1,11 @@
 import type { ReactNode } from "react";
 import { createLedgerEntryAction } from "@/app/actions";
 import { CrmOperations } from "@/components/crm-operations";
+import {
+  AccountsDirectory,
+  ContactsDirectory,
+  DealsDirectory,
+} from "@/components/crm-records";
 import { CrmSnapshot, FlashMessage } from "@/lib/types";
 
 function formatCurrency(value: number) {
@@ -262,295 +267,54 @@ export function CrmWorkspacePage(props: {
 }
 
 export function CrmPipelinePage({ snapshot }: { snapshot: CrmSnapshot }) {
-  const topSignals = snapshot.campaignSignals
-    .filter((signal) => signal.replied || signal.clicked)
-    .slice(0, 5);
-  const strongestDeals = [...snapshot.deals].sort(
-    (a, b) => (b.probabilityScore ?? 0) - (a.probabilityScore ?? 0),
-  );
-
-  return (
-    <section className="grid gap-6 xl:grid-cols-[1.55fr_0.95fr]">
-      <div className="glass-card rounded-[2rem] p-6 sm:p-8">
-        <SectionHeader
-          copy="This route is just for stage movement and belief progression. The whole board is isolated here so it no longer competes with data entry."
-          eyebrow="Pipeline"
-          title="Belief progression velocity"
-        />
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          {snapshot.stagePerformance.map((stage, index) => (
-            <article
-              key={stage.stage}
-              className="rounded-3xl border border-white/60 bg-white/75 p-5"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] ${getStageTone(
-                    index,
-                  )}`}
-                >
-                  {stage.stage}
-                </span>
-                <span className="font-mono text-xs text-slate-500">{stage.dealCount} active</span>
-              </div>
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <MetricMini helper="Accounts touched" label="Reached" value={`${stage.reachedCount}`} />
-                <MetricMini
-                  helper="Into next stage"
-                  label="Conversion"
-                  value={formatPercent(stage.conversionRate)}
-                />
-                <MetricMini
-                  helper="Average in stage"
-                  label="Time"
-                  value={`${stage.avgTimeInStageDays.toFixed(1)}d`}
-                />
-              </div>
-
-              <div className="mt-4 rounded-2xl bg-slate-900 px-4 py-3 text-white">
-                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-300">
-                  Revenue leakage still exposed
-                </p>
-                <p className="mt-1 text-xl font-semibold">
-                  {formatCurrency(stage.revenueLeakage)}
-                </p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-6">
-        <section className="glass-card rounded-[2rem] p-6">
-          <SectionHeader
-            copy="Signals are sorted by movement, not by volume."
-            eyebrow="AI SDR"
-            title="Reply classification engine"
-          />
-
-          <div className="mt-5 space-y-3">
-            {topSignals.length === 0 ? (
-              <EmptySection message="No campaign signals logged yet." />
-            ) : (
-              topSignals.map((signal) => (
-                <div
-                  key={signal.id}
-                  className="rounded-2xl border border-white/70 bg-white/70 p-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold text-slate-900">{signal.campaignName}</p>
-                    <span className="rounded-full bg-slate-900 px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-white">
-                      {signal.aiClassification}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Step {signal.emailStep} •{" "}
-                    {signal.timeToFirstResponseHours
-                      ? `${signal.timeToFirstResponseHours}h to first response`
-                      : "Awaiting reply"}{" "}
-                    • {signal.replySentiment} sentiment
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        <section className="rounded-[2rem] bg-slate-950 p-6 text-white shadow-2xl">
-          <SectionHeader
-            copy="Probability score = ICP fit × engagement × pain × authority."
-            dark
-            eyebrow="Probability"
-            title={`${(strongestDeals[0]?.probabilityScore ?? 0).toFixed(0)}% fit on the strongest deal`}
-          />
-
-          <div className="mt-5 grid gap-3">
-            {strongestDeals.length === 0 ? (
-              <EmptySection dark message="No deals yet. Create the first deal in Workspace." />
-            ) : (
-              strongestDeals.slice(0, 4).map((deal) => (
-                <div
-                  key={deal.id}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold">{deal.name}</p>
-                    <p className="font-mono text-sm text-teal-300">
-                      {deal.probabilityScore}% / {formatCurrency(deal.weightedRevenue ?? 0)}
-                    </p>
-                  </div>
-                  <p className="mt-2 text-sm text-slate-300">
-                    {deal.ownerName} • {deal.nextAction}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-      </div>
-    </section>
-  );
+  return <CrmDealsPage snapshot={snapshot} />;
 }
 
 export function CrmAccountsPage({ snapshot }: { snapshot: CrmSnapshot }) {
-  const topAccounts = [...snapshot.accounts].sort(
-    (a, b) => b.estimatedMonthlyRevenueLeak - a.estimatedMonthlyRevenueLeak,
-  );
-  const recentContacts = [...snapshot.contacts].slice(0, 6);
-  const accountsById = new Map(snapshot.accounts.map((account) => [account.id, account]));
-
   return (
-    <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-      <div className="glass-card rounded-[2rem] p-6 sm:p-8">
+    <>
+      <section className="glass-card rounded-[2rem] p-6 sm:p-8">
         <SectionHeader
-          copy="This page is the math layer: company economics, friction, and system context."
+          copy="This route is the math layer for company-level decisions. Search, sort, open, and edit account records without switching pages."
           eyebrow="Accounts"
-          title="Revenue leakage by account"
+          title="Company economics and leak exposure"
         />
+      </section>
 
-        <div className="mt-6 space-y-4">
-          {topAccounts.length === 0 ? (
-            <EmptySection message="No accounts yet. Create the first account in Workspace." />
-          ) : (
-            topAccounts.map((account) => (
-              <article
-                key={account.id}
-                className="rounded-3xl border border-white/70 bg-white/75 p-5"
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p className="text-xl font-semibold">{account.companyName}</p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {account.industryVertical} • {account.location} •{" "}
-                      {account.acquisitionModel} acquisition
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-slate-900 px-4 py-3 text-right text-white">
-                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-300">
-                      Leak / Month
-                    </p>
-                    <p className="text-xl font-semibold">
-                      {formatCurrency(account.estimatedMonthlyRevenueLeak)}
-                    </p>
-                  </div>
-                </div>
+      <AccountsDirectory snapshot={snapshot} />
+    </>
+  );
+}
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <MetricMini
-                    helper="Outbound intensity"
-                    label="Signal"
-                    value={`${account.signalScore}/100`}
-                  />
-                  <MetricMini
-                    helper="Ideal customer score"
-                    label="ICP Fit"
-                    value={`${account.icpFitScore}/100`}
-                  />
-                  <MetricMini
-                    helper="Estimated customer value"
-                    label="LTV"
-                    value={formatCurrency(account.estimatedLtv)}
-                  />
-                  <MetricMini
-                    helper="Estimated conversion rate"
-                    label="Conv."
-                    value={formatPercent(account.estimatedConversionRate)}
-                  />
-                </div>
+export function CrmDealsPage({ snapshot }: { snapshot: CrmSnapshot }) {
+  return (
+    <>
+      <section className="glass-card rounded-[2rem] p-6 sm:p-8">
+        <SectionHeader
+          copy="Deals now have a dedicated operating surface. Filter the pipeline as a list, or switch to a stage board when you want belief progression context."
+          eyebrow="Deals"
+          title="Sortable deal list and pipeline board"
+        />
+      </section>
 
-                <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-                  <div className="rounded-2xl bg-slate-50 p-4">
-                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                      Friction
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-700">
-                      {account.frictionSummary}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-slate-50 p-4">
-                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                      System Context
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-700">
-                      {account.techStack.join(", ")} with {account.bookingSoftware} and{" "}
-                      {account.crmUsed}.
-                    </p>
-                  </div>
-                </div>
-              </article>
-            ))
-          )}
-        </div>
-      </div>
+      <DealsDirectory snapshot={snapshot} />
+    </>
+  );
+}
 
-      <div className="flex flex-col gap-6">
-        <section className="glass-card rounded-[2rem] p-6">
-          <SectionHeader
-            copy="The CRM stays broad at the core, then adapts by vertical where the economics differ."
-            eyebrow="Vertical Intelligence"
-            title="Adaptive offer modules"
-          />
+export function CrmContactsPage({ snapshot }: { snapshot: CrmSnapshot }) {
+  return (
+    <>
+      <section className="glass-card rounded-[2rem] p-6 sm:p-8">
+        <SectionHeader
+          copy="This route is for the people layer: search stakeholders, filter by response posture, and enrich decision-maker records in place."
+          eyebrow="Contacts"
+          title="Decision-maker directory"
+        />
+      </section>
 
-          <div className="mt-5 space-y-4">
-            {snapshot.verticalModules.length === 0 ? (
-              <EmptySection message="No vertical modules added yet." />
-            ) : (
-              snapshot.verticalModules.map((module) => (
-                <article
-                  key={module.id}
-                  className="rounded-3xl border border-white/70 bg-white/75 p-4"
-                >
-                  <p className="text-lg font-semibold text-slate-900">{module.vertical}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{module.summary}</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {module.metrics.map((metric) => (
-                      <span
-                        key={metric}
-                        className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white"
-                      >
-                        {metric}
-                      </span>
-                    ))}
-                  </div>
-                </article>
-              ))
-            )}
-          </div>
-        </section>
-
-        <section className="glass-card rounded-[2rem] p-6">
-          <SectionHeader
-            copy="Contacts stay attached to the account math layer instead of taking over the UI."
-            eyebrow="Contact Network"
-            title="Decision roles on file"
-          />
-
-          <div className="mt-5 space-y-3">
-            {recentContacts.length === 0 ? (
-              <EmptySection message="No contacts yet. Add one in Workspace." />
-            ) : (
-              recentContacts.map((contact) => (
-                <div
-                  key={contact.id}
-                  className="rounded-2xl border border-white/70 bg-white/75 p-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-semibold text-slate-900">{contact.name}</p>
-                    <p className="font-mono text-xs text-slate-500">{contact.responseType}</p>
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    {contact.title || "No title"} •{" "}
-                    {accountsById.get(contact.accountId)?.companyName ?? "Unknown account"}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-      </div>
-    </section>
+      <ContactsDirectory snapshot={snapshot} />
+    </>
   );
 }
 

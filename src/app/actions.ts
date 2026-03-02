@@ -508,6 +508,84 @@ export async function createDealAction(formData: FormData) {
   }
 }
 
+export async function updateDealAction(formData: FormData) {
+  const redirectPath = resolveReturnPath(formData.get("redirectTo"));
+
+  try {
+    const supabase = await getRequiredSupabaseClient();
+    const dealId = readText(formData, "dealId");
+    const name = readText(formData, "name");
+    const accountId = readText(formData, "accountId");
+    const primaryContactId = readText(formData, "primaryContactId");
+
+    if (!dealId) {
+      finish(redirectPath, "error", "Deal id is required.");
+    }
+
+    if (!name || !accountId || !primaryContactId) {
+      finish(redirectPath, "error", "Deal name, account, and primary contact are required.");
+    }
+
+    const { data, error: contactError } = await supabase
+      .from("contacts")
+      .select("account_id")
+      .eq("id", primaryContactId)
+      .maybeSingle();
+
+    if (contactError) {
+      finish(redirectPath, "error", `Deal update failed: ${contactError.message}`);
+    }
+
+    if (!data?.account_id || String(data.account_id) !== accountId) {
+      finish(
+        redirectPath,
+        "error",
+        "The selected contact belongs to a different account. Choose a matching contact.",
+      );
+    }
+
+    const stage = parseStage(formData.get("stage"));
+    const payload = {
+      account_id: accountId,
+      primary_contact_id: primaryContactId,
+      name,
+      stage,
+      arr_opportunity: parseNumber(formData.get("arrOpportunity")),
+      estimated_leak: parseNumber(formData.get("estimatedLeak")),
+      pain_score: parseInteger(formData.get("painScore"), 50),
+      authority_level: parseInteger(formData.get("authorityLevel"), 3),
+      engagement_score: parseInteger(formData.get("engagementScore")),
+      icp_fit_score: parseInteger(formData.get("icpFitScore")),
+      time_in_stage_days: parseInteger(formData.get("timeInStageDays")),
+      next_action: readText(formData, "nextAction"),
+      owner_name: readText(formData, "ownerName"),
+      source: readText(formData, "source"),
+      outbound_cost: parseNumber(formData.get("outboundCost")),
+      closed_at: stage === "Closed - Installed" ? new Date().toISOString() : null,
+    };
+
+    const { error } = await supabase.from("deals").update(payload).eq("id", dealId);
+
+    if (error) {
+      finish(redirectPath, "error", `Deal update failed: ${error.message}`);
+    }
+
+    await supabase.from("deal_stage_events").insert({
+      deal_id: dealId,
+      stage,
+    });
+
+    finish(redirectPath, "success", `${name} was updated.`);
+  } catch (error) {
+    if (isRedirectSignal(error)) {
+      throw error;
+    }
+
+    const message = error instanceof Error ? error.message : "Unknown deal update error.";
+    finish(redirectPath, "error", `Deal update failed: ${message}`);
+  }
+}
+
 export async function updateDealStageAction(formData: FormData) {
   const redirectPath = resolveReturnPath(formData.get("redirectTo"));
 

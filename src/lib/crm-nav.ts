@@ -1,8 +1,9 @@
 export const CRM_NAV_ITEMS = [
   { href: "/", label: "Overview" },
   { href: "/workspace", label: "Workspace" },
-  { href: "/pipeline", label: "Pipeline" },
+  { href: "/deals", label: "Deals" },
   { href: "/accounts", label: "Accounts" },
+  { href: "/contacts", label: "Contacts" },
   { href: "/revenue", label: "Revenue" },
 ] as const;
 
