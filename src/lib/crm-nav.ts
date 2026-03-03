@@ -1,5 +1,6 @@
 export const CRM_NAV_ITEMS = [
   { href: "/", label: "Overview" },
+  { href: "/startup-checklist", label: "Checklist" },
   { href: "/workspace", label: "Workspace" },
   { href: "/deals", label: "Deals" },
   { href: "/accounts", label: "Accounts" },

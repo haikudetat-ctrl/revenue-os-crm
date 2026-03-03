@@ -1,11 +1,14 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { createLedgerEntryAction } from "@/app/actions";
 import { CrmOperations } from "@/components/crm-operations";
+import { StartupChecklistPanel } from "@/components/startup-checklist-panel";
 import {
   AccountsDirectory,
   ContactsDirectory,
   DealsDirectory,
 } from "@/components/crm-records";
+import { getStartupChecklistCounts } from "@/lib/startup-checklist";
 import { CrmSnapshot, FlashMessage } from "@/lib/types";
 
 function formatCurrency(value: number) {
@@ -46,7 +49,10 @@ function getStageTone(index: number) {
 export function CrmOverviewPage(props: {
   snapshot: CrmSnapshot;
   flashMessage?: FlashMessage | null;
+  checklistProgress?: string[];
+  viewerEmail?: string | null;
 }) {
+  const checklistCounts = getStartupChecklistCounts();
   const highestLeakAccount = [...props.snapshot.accounts].sort(
     (a, b) => b.estimatedMonthlyRevenueLeak - a.estimatedMonthlyRevenueLeak,
   )[0];
@@ -57,29 +63,66 @@ export function CrmOverviewPage(props: {
   const topAccounts = [...props.snapshot.accounts]
     .sort((a, b) => b.estimatedMonthlyRevenueLeak - a.estimatedMonthlyRevenueLeak)
     .slice(0, 3);
+  const importCampaigns = props.snapshot.importCampaigns.slice(0, 2);
+  const recentImportBatches = props.snapshot.importBatches.slice(0, 4);
 
   return (
     <>
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="glass-card rounded-[2rem] p-6 sm:p-8">
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-teal-800">
-            Overview
-          </p>
-          <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            A cleaner control surface for revenue decisions.
-          </h1>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-            Each route now serves a single operating job: review, capture, pipeline
-            movement, account math, or revenue tracking. The overview stays lean and points
-            you to the next decision.
-          </p>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="font-mono text-xs uppercase tracking-[0.3em] text-teal-800">
+                Startup Checklist
+              </p>
+              <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+                Build the company before you force the sales motion.
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
+                This keeps the pre-revenue work visible: legal, payment rails, trust
+                assets, offer clarity, sales infrastructure, delivery readiness, and risk
+                protection.
+              </p>
+            </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <QuestionChip label="Signal origin" />
-            <QuestionChip label="Prospect math" />
-            <QuestionChip label="Friction" />
-            <QuestionChip label="Belief stage" />
-            <QuestionChip label="Weighted revenue" />
+            <Link
+              className="inline-flex items-center justify-center rounded-2xl border border-[rgba(33,42,52,0.12)] bg-[linear-gradient(135deg,var(--indigo),var(--teal))] px-4 py-2 text-sm font-semibold text-[#f5efe4] transition-opacity hover:opacity-90"
+              href="/startup-checklist"
+            >
+              Open Full Checklist
+            </Link>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <InsightCard
+              eyebrow="Sections"
+              helper="Foundational operating areas"
+              value={`${checklistCounts.totalSections}`}
+            />
+            <InsightCard
+              eyebrow="Items"
+              helper="Total concrete checklist items"
+              value={`${checklistCounts.totalItems}`}
+            />
+            <InsightCard
+              eyebrow="Required"
+              helper="Must-do before serious selling"
+              value={`${checklistCounts.requiredItems}`}
+            />
+            <InsightCard
+              eyebrow="Critical"
+              helper="Founder-risk and revenue blockers"
+              value={`${checklistCounts.criticalItems}`}
+            />
+          </div>
+
+          <div className="mt-6">
+            <StartupChecklistPanel
+              defaultOpenCount={1}
+              initialCheckedItemKeys={props.checklistProgress}
+              sectionLimit={3}
+              viewerEmail={props.viewerEmail}
+            />
           </div>
 
           {props.flashMessage ? <FlashNotice flashMessage={props.flashMessage} /> : null}
@@ -132,6 +175,71 @@ export function CrmOverviewPage(props: {
             <p className="mt-3 text-sm leading-6 text-slate-600">{metric.helper}</p>
           </article>
         ))}
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="glass-card rounded-[2rem] p-6">
+          <SectionHeader
+            copy="Lead imports now live under formal campaign and batch records, so your CSV uploads can be traced instead of just becoming anonymous contacts."
+            eyebrow="Import Control"
+            title="Campaign grouping is now first-class"
+          />
+
+          <div className="mt-5 space-y-3">
+            {importCampaigns.length === 0 ? (
+              <EmptySection message="No import campaigns recorded yet." />
+            ) : (
+              importCampaigns.map((campaign) => (
+                <article
+                  key={campaign.id}
+                  className="rounded-2xl border border-white/70 bg-white/75 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-semibold text-slate-900">{campaign.name}</p>
+                    <span className="font-mono text-xs text-slate-500">
+                      {campaign.activeBatchCount} batches
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {campaign.channel} • {campaign.leadCount.toLocaleString()} leads •{" "}
+                    {campaign.status}
+                  </p>
+                </article>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="glass-card rounded-[2rem] p-6">
+          <SectionHeader
+            copy="Each batch preserves the source file and import size, so you can trace where a lead cohort came from."
+            eyebrow="Batches"
+            title="Recent file imports"
+          />
+
+          <div className="mt-5 space-y-3">
+            {recentImportBatches.length === 0 ? (
+              <EmptySection message="No import batches recorded yet." />
+            ) : (
+              recentImportBatches.map((batch) => (
+                <article
+                  key={batch.id}
+                  className="rounded-2xl border border-white/70 bg-white/75 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-semibold text-slate-900">{batch.name}</p>
+                    <span className="font-mono text-xs text-slate-500">
+                      {batch.importedLeadCount.toLocaleString()} leads
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {batch.sourceLabel} • {batch.importedAccountCount.toLocaleString()} accounts
+                  </p>
+                </article>
+              ))
+            )}
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-3">
@@ -246,10 +354,68 @@ export function CrmOverviewPage(props: {
   );
 }
 
+export function CrmStartupChecklistPage(props: {
+  checklistProgress?: string[];
+  viewerEmail?: string | null;
+}) {
+  const checklistCounts = getStartupChecklistCounts();
+
+  return (
+    <>
+      <section className="glass-card rounded-[2rem] p-6 sm:p-8">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <SectionHeader
+              copy="This is the pre-launch operating list: what needs to exist before closing, invoicing, and implementing at a professional level."
+              eyebrow="Startup Checklist"
+              title="Foundational readiness before aggressive outbound"
+            />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <InsightCard
+              eyebrow="Sections"
+              helper="Major operating tracks"
+              value={`${checklistCounts.totalSections}`}
+            />
+            <InsightCard
+              eyebrow="Items"
+              helper="Discrete actions to complete"
+              value={`${checklistCounts.totalItems}`}
+            />
+            <InsightCard
+              eyebrow="Required"
+              helper="Baseline must-dos"
+              value={`${checklistCounts.requiredItems}`}
+            />
+            <InsightCard
+              eyebrow="Critical"
+              helper="High-risk decision points"
+              value={`${checklistCounts.criticalItems}`}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4">
+        <StartupChecklistPanel
+          defaultOpenCount={2}
+          initialCheckedItemKeys={props.checklistProgress}
+          viewerEmail={props.viewerEmail}
+        />
+      </section>
+    </>
+  );
+}
+
 export function CrmWorkspacePage(props: {
   snapshot: CrmSnapshot;
   flashMessage?: FlashMessage | null;
 }) {
+  const healthyMailboxes = props.snapshot.senderMailboxes.filter(
+    (mailbox) => mailbox.healthStatus === "Healthy",
+  ).length;
+
   return (
     <>
       <section className="glass-card rounded-[2rem] p-6 sm:p-8">
@@ -259,6 +425,82 @@ export function CrmWorkspacePage(props: {
           title="Create and update records"
         />
         {props.flashMessage ? <FlashNotice flashMessage={props.flashMessage} /> : null}
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="glass-card rounded-[2rem] p-6">
+          <SectionHeader
+            copy="The three Hostinger mailboxes now register as first-class sender infrastructure. Credentials stay in Vercel; only operational metadata is mirrored here."
+            eyebrow="Mailbox Pool"
+            title={`${healthyMailboxes}/${props.snapshot.senderMailboxes.length} sender mailboxes healthy`}
+          />
+
+          <div className="mt-5 space-y-3">
+            {props.snapshot.senderMailboxes.length === 0 ? (
+              <EmptySection message="No sender mailboxes detected yet. Add SDR_MAILBOX_* env vars in Vercel." />
+            ) : (
+              props.snapshot.senderMailboxes.map((mailbox) => (
+                <article
+                  key={mailbox.id}
+                  className="rounded-2xl border border-white/70 bg-white/75 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-semibold text-slate-900">{mailbox.displayName}</p>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                        mailbox.healthStatus === "Healthy"
+                          ? "bg-emerald-100 text-emerald-900"
+                          : "bg-amber-100 text-amber-900"
+                      }`}
+                    >
+                      {mailbox.healthStatus}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {mailbox.email} • {mailbox.provider} • {mailbox.dailySendCap}/day cap
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    {mailbox.smtpHost}:{mailbox.smtpPort} SMTP • {mailbox.imapHost}:{mailbox.imapPort} IMAP
+                  </p>
+                </article>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="glass-card rounded-[2rem] p-6">
+          <SectionHeader
+            copy="The sequence engine schema is now in place. Next you can create sequences, enroll a campaign batch, and start filling the send queue."
+            eyebrow="Sequence Engine"
+            title={`${props.snapshot.sdrSequences.length} sequences configured`}
+          />
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <InsightCard
+              eyebrow="Campaigns"
+              helper="Import campaigns ready"
+              value={`${props.snapshot.importCampaigns.length}`}
+            />
+            <InsightCard
+              eyebrow="Batches"
+              helper="Import cohorts available"
+              value={`${props.snapshot.importBatches.length}`}
+            />
+            <InsightCard
+              eyebrow="Sequences"
+              helper="Templates currently created"
+              value={`${props.snapshot.sdrSequences.length}`}
+            />
+            <InsightCard
+              eyebrow="Enrollments"
+              helper="Active queued recipients"
+              value={`${props.snapshot.sdrSequences.reduce(
+                (sum, sequence) => sum + sequence.activeEnrollmentCount,
+                0,
+              )}`}
+            />
+          </div>
+        </div>
       </section>
 
       <CrmOperations snapshot={props.snapshot} />
@@ -603,14 +845,6 @@ function Field(props: {
       </span>
       {props.children}
     </label>
-  );
-}
-
-function QuestionChip(props: { label: string }) {
-  return (
-    <div className="rounded-2xl border border-white/70 bg-white/75 px-4 py-3 text-sm font-medium text-slate-700">
-      {props.label}
-    </div>
   );
 }
 

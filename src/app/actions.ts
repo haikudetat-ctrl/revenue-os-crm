@@ -178,6 +178,22 @@ async function getRequiredSupabaseClient() {
   return supabase;
 }
 
+async function getRequiredSupabaseClientWithUser() {
+  const user = await requireAuthenticatedUser();
+
+  if (!user) {
+    throw new Error("You must be logged in to update checklist progress.");
+  }
+
+  const supabase = getSupabaseServerClient();
+
+  if (!supabase) {
+    throw new Error("Supabase is not configured on the server.");
+  }
+
+  return { supabase, user };
+}
+
 function finish(redirectPath: string, status: NoticeStatus, message: string) {
   CRM_APP_PATHS.forEach((path) => revalidatePath(path));
   redirect(`${redirectPath}?status=${status}&message=${encodeURIComponent(message)}`);
@@ -191,6 +207,81 @@ function isRedirectSignal(error: unknown) {
     typeof (error as { digest?: unknown }).digest === "string" &&
     (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
   );
+}
+
+export async function updateStartupChecklistItemAction(input: {
+  itemKey: string;
+  sectionId: string;
+  itemLabel: string;
+  checked: boolean;
+}) {
+  try {
+    const { supabase, user } = await getRequiredSupabaseClientWithUser();
+    const itemKey = input.itemKey.trim();
+    const sectionId = input.sectionId.trim();
+    const itemLabel = input.itemLabel.trim();
+
+    if (!itemKey || !sectionId || !itemLabel) {
+      return {
+        ok: false as const,
+        error: "Checklist item metadata is incomplete.",
+      };
+    }
+
+    if (input.checked) {
+      const { error } = await supabase
+        .from("startup_checklist_progress")
+        .upsert(
+          {
+            user_email: user.email,
+            user_name: user.name,
+            section_id: sectionId,
+            item_label: itemLabel,
+            item_key: itemKey,
+            completed_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "user_email,item_key",
+          },
+        );
+
+      if (error) {
+        return {
+          ok: false as const,
+          error: error.message,
+        };
+      }
+    } else {
+      const { error } = await supabase
+        .from("startup_checklist_progress")
+        .delete()
+        .eq("user_email", user.email)
+        .eq("item_key", itemKey);
+
+      if (error) {
+        return {
+          ok: false as const,
+          error: error.message,
+        };
+      }
+    }
+
+    revalidatePath("/");
+    revalidatePath("/startup-checklist");
+
+    return {
+      ok: true as const,
+    };
+  } catch (error) {
+    if (isRedirectSignal(error)) {
+      throw error;
+    }
+
+    return {
+      ok: false as const,
+      error: error instanceof Error ? error.message : "Unable to save checklist progress.",
+    };
+  }
 }
 
 export async function createAccountAction(formData: FormData) {
